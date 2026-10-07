@@ -1,6 +1,7 @@
 module.exports = async function handler(req, res) {
   try {
-    const { app, connectToDatabase } = require('../src');
+    const app = require('../src');
+    const { connectToDatabase } = app;
     await connectToDatabase();
     return app(req, res);
   } catch (error) {

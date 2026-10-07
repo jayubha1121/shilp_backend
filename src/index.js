@@ -28,6 +28,9 @@ app.use(cookieParser());
 
 app.get('/', (_req, res) => res.json({ success: true, message: 'Shilp API is running.' }));
 app.get('/api/health', (_req, res) => res.json({ success: true }));
+app.use((_req, _res, next) => {
+  connectToDatabase().then(() => next(), next);
+});
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 const registerLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false });
@@ -185,11 +188,12 @@ async function start() {
   app.listen(port, () => console.log(`Shilp API connected to MongoDB and listening on http://localhost:${port}`));
 }
 
-if (require.main === module) {
+if (require.main === module && !process.env.VERCEL) {
   start().catch((error) => {
     console.error('Shilp API failed to start:', error.message);
     process.exit(1);
   });
 }
 
-module.exports = { app, connectToDatabase };
+module.exports = app;
+module.exports.connectToDatabase = connectToDatabase;
