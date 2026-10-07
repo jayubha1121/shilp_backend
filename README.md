@@ -30,4 +30,4 @@ Add these environment variables in the Vercel project settings for each environm
 - `ADMIN_ORIGIN`: the deployed admin site's exact HTTPS origin, without a trailing slash.
 - `COOKIE_SECURE`: set to `true` for HTTPS deployments.
 
-Redeploy after changing environment variables. Opening the backend root URL should return a small JSON health response; API endpoints remain under `/api`.
+Redeploy after changing environment variables. Opening the backend root URL should return a small JSON health response; API endpoints remain under `/api`. The health response checks that the function is running, while API requests also require a reachable MongoDB database. If the health URL works but API requests fail, check the Vercel function logs and allow database connections from Vercel in your MongoDB network settings.

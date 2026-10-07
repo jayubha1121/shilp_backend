@@ -165,7 +165,10 @@ async function connectToDatabase() {
   if (mongoose.connection.readyState === 1) return;
   if (mongoose.connection.readyState === 0) databaseConnection = undefined;
   if (!databaseConnection) {
-    databaseConnection = mongoose.connect(process.env.MONGODB_URI)
+    databaseConnection = mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    })
       .then(() => {
         app.locals.projectUploads = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'projectMedia' });
       })

@@ -1,14 +1,22 @@
 const { app, connectToDatabase } = require('../src');
 
 module.exports = async function handler(req, res) {
+  const requestPath = new URL(req.url, 'http://localhost').pathname;
+  if (requestPath === '/' || requestPath === '/api/health') {
+    return app(req, res);
+  }
+
   try {
     await connectToDatabase();
     return app(req, res);
   } catch (error) {
     console.error('Shilp API initialization failed:', error);
+    const message = error.name === 'MongooseServerSelectionError'
+      ? 'Unable to reach MongoDB. Check MONGODB_URI and MongoDB network access in Vercel.'
+      : 'API initialization failed. Check JWT_SECRET, MONGODB_URI, and the Vercel function logs.';
     return res.status(500).json({
       success: false,
-      message: 'API initialization failed. Check the Vercel environment variables and database connection.',
+      message,
     });
   }
 };
