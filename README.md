@@ -17,3 +17,17 @@ Copy `.env.example` to `.env`, configure `MONGODB_URI` and `API_PUBLIC_URL`, and
 - `GET /api/uploads/:id` streams a stored image for public project pages.
 
 MongoDB and GridFS are the source of truth for project data and uploaded media. Set `API_PUBLIC_URL` to the reachable backend origin in production.
+
+## Deploying to Vercel
+
+Set the Vercel project root directory to `shilp_backend`. Vercel serves the Express app through `api/[...path].js`; do not configure a custom `npm start` command for the deployment.
+
+Add these environment variables in the Vercel project settings for each environment you deploy:
+
+- `MONGODB_URI`: the production MongoDB connection string. Ensure the database allows connections from Vercel.
+- `JWT_SECRET`: a random secret at least 32 characters long.
+- `API_PUBLIC_URL`: the deployed backend's HTTPS origin, without a trailing slash.
+- `ADMIN_ORIGIN`: the deployed admin site's exact HTTPS origin, without a trailing slash.
+- `COOKIE_SECURE`: set to `true` for HTTPS deployments.
+
+Redeploy after changing environment variables. Opening the backend root URL should return a small JSON health response; API endpoints remain under `/api`.

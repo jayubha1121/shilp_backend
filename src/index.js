@@ -14,18 +14,20 @@ const { authenticate, authenticateOptional, assertAuthConfig, login, logout, reg
 const { archiveProject, createProject, getProject, listProjects, parseProjectDraft, updateProject } = require('./mongo-projects');
 const { sanitizeSvg } = require('./sanitize-svg');
 
-assertAuthConfig();
-
 const app = express();
 const port = Number(process.env.PORT || 8081);
 const publicApiUrl = process.env.API_PUBLIC_URL || `http://localhost:${port}`;
 const allowedOrigins = (process.env.ADMIN_ORIGIN || 'http://localhost:3000,http://localhost:3001').split(',').map((origin) => origin.trim());
+let databaseConnection;
 
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+
+app.get('/', (_req, res) => res.json({ success: true, message: 'Shilp API is running.' }));
+app.get('/api/health', (_req, res) => res.json({ success: true }));
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 const registerLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false });
@@ -156,14 +158,35 @@ app.use((error, _req, res, _next) => {
   return res.status(500).json({ success: false, message: 'The request could not be completed.' });
 });
 
+async function connectToDatabase() {
+  assertAuthConfig();
+  if (!process.env.MONGODB_URI) throw new Error('Set MONGODB_URI in the backend environment before starting the API.');
+
+  if (mongoose.connection.readyState === 1) return;
+  if (mongoose.connection.readyState === 0) databaseConnection = undefined;
+  if (!databaseConnection) {
+    databaseConnection = mongoose.connect(process.env.MONGODB_URI)
+      .then(() => {
+        app.locals.projectUploads = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'projectMedia' });
+      })
+      .catch((error) => {
+        databaseConnection = undefined;
+        throw error;
+      });
+  }
+  await databaseConnection;
+}
+
 async function start() {
-  if (!process.env.MONGODB_URI) throw new Error('Set MONGODB_URI in shilp_backend/.env before starting the API.');
-  await mongoose.connect(process.env.MONGODB_URI);
-  app.locals.projectUploads = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'projectMedia' });
+  await connectToDatabase();
   app.listen(port, () => console.log(`Shilp API connected to MongoDB and listening on http://localhost:${port}`));
 }
 
-start().catch((error) => {
-  console.error('Shilp API failed to start:', error.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  start().catch((error) => {
+    console.error('Shilp API failed to start:', error.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, connectToDatabase };
