@@ -1,12 +1,13 @@
-const { app, connectToDatabase } = require('../src');
-
 module.exports = async function handler(req, res) {
-  const requestPath = new URL(req.url, 'http://localhost').pathname;
+  const requestPath = new URL(req.url || '/', 'http://localhost').pathname;
   if (requestPath === '/' || requestPath === '/api/health') {
-    return app(req, res);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.end(JSON.stringify({ success: true, message: 'Shilp API is running.' }));
   }
 
   try {
+    const { app, connectToDatabase } = require('../src');
     await connectToDatabase();
     return app(req, res);
   } catch (error) {
