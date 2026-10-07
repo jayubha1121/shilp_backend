@@ -16,7 +16,7 @@ const { sanitizeSvg } = require('./sanitize-svg');
 
 const app = express();
 const port = Number(process.env.PORT || 8081);
-const publicApiUrl = process.env.API_PUBLIC_URL || `http://localhost:${port}`;
+const publicApiUrl = (process.env.API_PUBLIC_URL || `http://localhost:${port}`).replace(/\/+$/, '');
 const allowedOrigins = (process.env.ADMIN_ORIGIN || 'http://localhost:3000,http://localhost:3001').split(',').map((origin) => origin.trim());
 let databaseConnection;
 
@@ -25,6 +25,10 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+app.set('json replacer', (_key, value) => {
+  if (typeof value !== 'string') return value;
+  return value.replace(/^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?=\/api\/uploads\/)/, publicApiUrl);
+});
 
 app.get('/', (_req, res) => res.json({ success: true, message: 'Shilp API is running.' }));
 app.get('/api/health', (_req, res) => res.json({ success: true }));

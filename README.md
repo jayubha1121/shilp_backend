@@ -20,14 +20,16 @@ MongoDB and GridFS are the source of truth for project data and uploaded media. 
 
 ## Deploying to Vercel
 
-Set the Vercel project root directory to `shilp_backend`. Vercel serves the Express app through `api/[...path].js`; do not configure a custom `npm start` command for the deployment.
+The backend project is `https://shilp-backend-dusky.vercel.app`. In its Vercel environment variables, set:
 
-Add these environment variables in the Vercel project settings for each environment you deploy:
+- `MONGODB_URI`: production MongoDB connection string. Allow connections from Vercel in MongoDB Network Access.
+- `JWT_SECRET`: random secret, at least 32 characters.
+- `API_PUBLIC_URL`: `https://shilp-backend-dusky.vercel.app`
+- `ADMIN_ORIGIN`: `https://shilp-admin-omega.vercel.app,https://shilp-website.vercel.app` (both frontend origins, no spaces).
+- `COOKIE_SECURE`: `true`.
 
-- `MONGODB_URI`: the production MongoDB connection string. Ensure the database allows connections from Vercel.
-- `JWT_SECRET`: a random secret at least 32 characters long.
-- `API_PUBLIC_URL`: the deployed backend's HTTPS origin, without a trailing slash.
-- `ADMIN_ORIGIN`: the deployed admin site's exact HTTPS origin, without a trailing slash.
-- `COOKIE_SECURE`: set to `true` for HTTPS deployments.
+The admin project is `https://shilp-admin-omega.vercel.app`. Set `BACKEND_URL` to `https://shilp-backend-dusky.vercel.app` and `NEXT_PUBLIC_SITE_URL` to `https://shilp-website.vercel.app`.
 
-Redeploy after changing environment variables. Opening the backend root URL should return a small JSON health response; API endpoints remain under `/api`. The health response checks that the function is running, while API requests also require a reachable MongoDB database. If the health URL works but API requests fail, check the Vercel function logs and allow database connections from Vercel in your MongoDB network settings.
+The public website project is `https://shilp-website.vercel.app`. Set both `BACKEND_URL` and `NEXT_PUBLIC_API_URL` to `https://shilp-backend-dusky.vercel.app`.
+
+Add each variable in the matching Vercel project's Settings → Environment Variables for Production, then redeploy that project. For the backend, deploy the backend repository with its repository root as the Vercel Root Directory; do not set a custom `npm start` command. The `/` and `/api/health` URLs should return JSON. Nested API paths such as `/api/auth/setup`, `/api/projects/<id>`, and `/api/uploads/<id>` are routed by dedicated serverless handlers. Project image URLs saved from local development are converted to the production API host in responses.
