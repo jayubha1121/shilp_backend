@@ -19,6 +19,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "multer": "^2.0.2",
-    "sanitize-html": "^2.18.0"
+    "sanitize-html": "2.18.0"
+  },
+  "overrides": {
+    "htmlparser2": "10.1.0"
   }
 }
