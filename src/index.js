@@ -16,19 +16,27 @@ const { sanitizeSvg } = require('./sanitize-svg');
 
 const app = express();
 const port = Number(process.env.PORT || 8081);
-const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-const productionApiUrl = vercelHost ? `https://${vercelHost}` : '';
+const isProductionDeployment = Boolean(
+  process.env.VERCEL ||
+  process.env.VERCEL_URL ||
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+  process.env.NODE_ENV === 'production',
+);
+const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'shilp-backend-dusky.vercel.app';
+const productionApiUrl = isProductionDeployment ? `https://${vercelHost}` : '';
 const configuredApiUrl = process.env.API_PUBLIC_URL?.trim();
 const publicApiUrl = (configuredApiUrl && !/^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/i.test(configuredApiUrl)
   ? configuredApiUrl
-  : process.env.VERCEL
-    ? productionApiUrl || configuredApiUrl || ''
+  : isProductionDeployment
+    ? productionApiUrl
     : configuredApiUrl || `http://localhost:${port}`).replace(/\/+$/, '');
-const defaultOrigins = process.env.VERCEL
-  ? 'https://shilp-admin-omega.vercel.app,https://shilp-website.vercel.app'
-  : 'http://localhost:3000,http://localhost:3001';
+const defaultOrigins = [
+  'https://shilp-admin-omega.vercel.app',
+  'https://shilp-website.vercel.app',
+  ...(!isProductionDeployment ? ['http://localhost:3000', 'http://localhost:3001'] : []),
+];
 const allowedOrigins = [...new Set([
-  ...defaultOrigins.split(','),
+  ...defaultOrigins,
   ...(process.env.ADMIN_ORIGIN || '').split(','),
 ].map((origin) => origin.trim()).filter(Boolean))];
 let databaseConnection;
