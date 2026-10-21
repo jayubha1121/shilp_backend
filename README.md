@@ -1,6 +1,6 @@
 # Shilp Backend
 
-Express API for admin authentication, projects, and image uploads. Project records are stored in MongoDB and uploaded image bytes are stored in the MongoDB GridFS `projectMedia` bucket.
+Express API for admin authentication, projects, project-tree entries, job openings, page banners, and image uploads. Records are stored in MongoDB and uploaded image bytes are stored in the MongoDB GridFS `projectMedia` bucket.
 
 ## Setup
 
@@ -13,10 +13,17 @@ Copy `.env.example` to `.env`, configure `MONGODB_URI` and `API_PUBLIC_URL`, and
 - `GET /api/projects` supports `type`, `search`, `limit`, and `skip`; public responses include active projects only.
 - `GET /api/projects/:id` returns an active project publicly and permits archived records to authenticated admins.
 - `POST /api/projects`, `PUT /api/projects/:id`, and `DELETE /api/projects/:id` require the HTTP-only session cookie. Delete archives instead of removing the record.
+- `GET /api/project-tree` supports `year`, `type`, `search`, `limit`, and `skip`; public responses include active project-tree entries only. Add `all=true` for the authenticated admin list.
+- `GET /api/project-tree/:id` returns an active entry publicly and archived entries to authenticated admins.
+- `POST /api/project-tree`, `PUT /api/project-tree/:id`, and `DELETE /api/project-tree/:id` require the HTTP-only session cookie. Delete archives instead of removing the entry.
+- `GET /api/job-openings` returns active job openings publicly; add `all=true` for the authenticated admin list.
+- `POST /api/job-openings`, `PUT /api/job-openings/:id`, and `DELETE /api/job-openings/:id` require the HTTP-only session cookie. Delete archives instead of removing the opening.
+- `GET /api/page-banners` returns the configured desktop and mobile banners for public pages.
+- `PUT /api/page-banners/:page` requires the HTTP-only session cookie and saves uploaded desktop/mobile images independently, so each replacement persists immediately; alternative text is saved on blur.
 - `POST /api/upload` requires authentication and stores one JPG, PNG, WebP, or GIF up to 8 MB in GridFS.
 - `GET /api/uploads/:id` streams a stored image for public project pages.
 
-MongoDB and GridFS are the source of truth for project data and uploaded media. Set `API_PUBLIC_URL` to the reachable backend origin in production.
+MongoDB and GridFS are the source of truth for project, job opening, page banner, and uploaded media data. Project Tree and Job Openings start empty and are populated through the admin; no sample records are inserted. Page banners are managed for the homepage, company pages, and residential/commercial/plotted homepage sections; individual project detail banners remain managed by the Projects editor. Set `API_PUBLIC_URL` to the reachable backend origin in production.
 
 ## Deploying to Vercel
 

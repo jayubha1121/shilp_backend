@@ -12,6 +12,22 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const { authenticate, authenticateOptional, assertAuthConfig, login, logout, register, setupStatus } = require('./auth');
 const { archiveProject, createProject, getProject, listProjects, parseProjectDraft, updateProject } = require('./mongo-projects');
+const {
+  archiveProjectTreeItem,
+  createProjectTreeItem,
+  getProjectTreeItem,
+  listProjectTreeItems,
+  parseProjectTreeDraft,
+  updateProjectTreeItem,
+} = require('./mongo-project-tree');
+const {
+  archiveJobOpening,
+  createJobOpening,
+  listJobOpenings,
+  parseJobOpeningDraft,
+  updateJobOpening,
+} = require('./mongo-job-openings');
+const { bannerPages, listPageBanners, parsePageBannerDraft, savePageBanner } = require('./mongo-page-banners');
 const { sanitizeSvg } = require('./sanitize-svg');
 
 const app = express();
@@ -173,6 +189,141 @@ app.delete('/api/projects/:id', authenticate, async (req, res, next) => {
     const deleted = await archiveProject(req.params.id);
     if (!deleted) return res.status(404).json({ success: false, message: 'Project not found.' });
     return res.json({ success: true, message: 'Project archived.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get('/api/project-tree', (req, res, next) => {
+  if (req.query.all === 'true') return authenticate(req, res, next);
+  return next();
+}, async (req, res, next) => {
+  try {
+    const all = req.query.all === 'true';
+    const type = ['commercial', 'residential', 'plotted'].includes(String(req.query.type)) ? String(req.query.type) : undefined;
+    const year = typeof req.query.year === 'string' && /^[12]\d{3}$/.test(req.query.year) ? req.query.year : undefined;
+    const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 120) : '';
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
+    const skip = Math.max(Number(req.query.skip) || 0, 0);
+    const result = await listProjectTreeItems({ search, year, type, includeInactive: all, skip, limit });
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/project-tree', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseProjectTreeDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid year, title, location, project type, image, and image description.' });
+    const item = await createProjectTreeItem(draft);
+    return res.status(201).json({ success: true, message: 'Project tree item created.', data: item });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get('/api/project-tree/:id', authenticateOptional, async (req, res, next) => {
+  try {
+    const item = await getProjectTreeItem(req.params.id, Boolean(req.admin));
+    if (!item) return res.status(404).json({ success: false, message: 'Project tree item not found.' });
+    return res.json({ success: true, data: item });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.put('/api/project-tree/:id', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseProjectTreeDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid year, title, location, project type, image, and image description.' });
+    const item = await updateProjectTreeItem(req.params.id, draft);
+    if (!item) return res.status(404).json({ success: false, message: 'Project tree item not found.' });
+    return res.json({ success: true, message: 'Project tree item updated.', data: item });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete('/api/project-tree/:id', authenticate, async (req, res, next) => {
+  try {
+    const archived = await archiveProjectTreeItem(req.params.id);
+    if (!archived) return res.status(404).json({ success: false, message: 'Project tree item not found.' });
+    return res.json({ success: true, message: 'Project tree item archived.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get('/api/job-openings', (req, res, next) => {
+  if (req.query.all === 'true') return authenticate(req, res, next);
+  return next();
+}, async (req, res, next) => {
+  try {
+    const all = req.query.all === 'true';
+    const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 120) : '';
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
+    const skip = Math.max(Number(req.query.skip) || 0, 0);
+    const result = await listJobOpenings({ search, includeInactive: all, skip, limit });
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/job-openings', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseJobOpeningDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid job title, job type, and experience.' });
+    const opening = await createJobOpening(draft);
+    return res.status(201).json({ success: true, message: 'Job opening created.', data: opening });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.put('/api/job-openings/:id', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseJobOpeningDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid job title, job type, and experience.' });
+    const opening = await updateJobOpening(req.params.id, draft);
+    if (!opening) return res.status(404).json({ success: false, message: 'Job opening not found.' });
+    return res.json({ success: true, message: 'Job opening updated.', data: opening });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete('/api/job-openings/:id', authenticate, async (req, res, next) => {
+  try {
+    const archived = await archiveJobOpening(req.params.id);
+    if (!archived) return res.status(404).json({ success: false, message: 'Job opening not found.' });
+    return res.json({ success: true, message: 'Job opening archived.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get('/api/page-banners', async (_req, res, next) => {
+  try {
+    const banners = await listPageBanners();
+    return res.json({ success: true, data: banners });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.put('/api/page-banners/:page', authenticate, async (req, res, next) => {
+  try {
+    if (!bannerPages.includes(req.params.page)) {
+      return res.status(404).json({ success: false, message: 'Banner page not found.' });
+    }
+    const draft = parsePageBannerDraft(req.body);
+    if (!draft) {
+      return res.status(400).json({ success: false, message: 'Upload at least one valid desktop or mobile banner image.' });
+    }
+    const banner = await savePageBanner(req.params.page, draft);
+    return res.json({ success: true, message: 'Page banner saved.', data: banner });
   } catch (error) {
     return next(error);
   }
