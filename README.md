@@ -23,7 +23,7 @@ Copy `.env.example` to `.env`, configure `MONGODB_URI` and `API_PUBLIC_URL`, and
 - `POST /api/upload` requires authentication and stores one JPG, PNG, WebP, or GIF up to 8 MB in GridFS.
 - `GET /api/uploads/:id` streams a stored image for public project pages.
 
-MongoDB and GridFS are the source of truth for project, job opening, page banner, and uploaded media data. Project Tree and Job Openings start empty and are populated through the admin; no sample records are inserted. Page banners are managed for the homepage, company pages, and residential/commercial/plotted homepage sections; individual project detail banners remain managed by the Projects editor. Set `API_PUBLIC_URL` to the reachable backend origin in production.
+MongoDB and GridFS are the source of truth for project, job opening, page banner, and uploaded media data. Project Tree and Job Openings start empty and are populated through the admin; no sample records are inserted. Page banners are managed for the homepage and company pages, plus the Residential/Plotted section story banners and Commercial banner. Residential and Plotted side images remain static; individual project detail banners remain managed by the Projects editor. Set `API_PUBLIC_URL` to the reachable backend origin in production.
 
 ## Deploying to Vercel
 

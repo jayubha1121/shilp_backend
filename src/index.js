@@ -46,6 +46,23 @@ const publicApiUrl = (configuredApiUrl && !/^https?:\/\/(?:localhost|127\.0\.0\.
   : isProductionDeployment
     ? productionApiUrl
     : configuredApiUrl || `http://localhost:${port}`).replace(/\/+$/, '');
+function publicizeUploadedMedia(value) {
+  if (typeof value !== 'string') return value;
+  try {
+    const url = new URL(value);
+    if (!['localhost', '127.0.0.1'].includes(url.hostname) || !url.pathname.startsWith('/api/uploads/')) return value;
+    return `${publicApiUrl}${url.pathname}${url.search}`;
+  } catch {
+    return value;
+  }
+}
+function publicizePageBanner(banner) {
+  return {
+    ...banner,
+    desktopImage: publicizeUploadedMedia(banner.desktopImage),
+    mobileImage: publicizeUploadedMedia(banner.mobileImage),
+  };
+}
 const defaultOrigins = [
   'https://shilp-admin-omega.vercel.app',
   'https://shilp-website.vercel.app',
@@ -306,7 +323,7 @@ app.delete('/api/job-openings/:id', authenticate, async (req, res, next) => {
 
 app.get('/api/page-banners', async (_req, res, next) => {
   try {
-    const banners = await listPageBanners();
+    const banners = (await listPageBanners()).map(publicizePageBanner);
     return res.json({ success: true, data: banners });
   } catch (error) {
     return next(error);
@@ -322,7 +339,7 @@ app.put('/api/page-banners/:page', authenticate, async (req, res, next) => {
     if (!draft) {
       return res.status(400).json({ success: false, message: 'Upload at least one valid desktop or mobile banner image.' });
     }
-    const banner = await savePageBanner(req.params.page, draft);
+    const banner = publicizePageBanner(await savePageBanner(req.params.page, draft));
     return res.json({ success: true, message: 'Page banner saved.', data: banner });
   } catch (error) {
     return next(error);
