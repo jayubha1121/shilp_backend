@@ -59,9 +59,11 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function listProjectTreeItems({ search, year, type, includeInactive, skip, limit }) {
+async function listProjectTreeItems({ search, year, type, status, includeInactive, skip, limit }) {
   const query = {};
   if (!includeInactive) query.isActive = true;
+  else if (status === 'active') query.isActive = true;
+  else if (status === 'archived') query.isActive = false;
   if (year) query.year = year;
   if (type) query.type = type;
   if (search) {

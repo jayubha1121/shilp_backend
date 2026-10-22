@@ -220,9 +220,10 @@ app.get('/api/project-tree', (req, res, next) => {
     const type = ['commercial', 'residential', 'plotted'].includes(String(req.query.type)) ? String(req.query.type) : undefined;
     const year = typeof req.query.year === 'string' && /^[12]\d{3}$/.test(req.query.year) ? req.query.year : undefined;
     const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 120) : '';
+    const status = all && ['active', 'archived'].includes(String(req.query.status)) ? String(req.query.status) : undefined;
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
     const skip = Math.max(Number(req.query.skip) || 0, 0);
-    const result = await listProjectTreeItems({ search, year, type, includeInactive: all, skip, limit });
+    const result = await listProjectTreeItems({ search, year, type, status, includeInactive: all, skip, limit });
     return res.json({ success: true, ...result });
   } catch (error) {
     return next(error);
