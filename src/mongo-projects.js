@@ -22,7 +22,7 @@ const amenitySchema = new Schema({
 const projectSchema = new Schema({
   slug: { type: String, required: true, unique: true, index: true },
   typeOfProject: { type: String, required: true, enum: ['commercial', 'residential', 'plotted'] },
-  projectState: { type: String, required: true, enum: ['Upcoming', 'On-going', 'Completed'] },
+  projectState: { type: String, required: true, enum: ['Upcoming', 'On-going', 'Under Construction', 'Completed'] },
   statusPercentage: { type: Number, required: true, min: 0, max: 100 },
   projectDetail: {
     title: { type: String, required: true, maxlength: 120 },
@@ -145,7 +145,7 @@ function parseProjectDraft(value) {
   if (
     !title || !slug || !desktopBanner || !mobileBanner || !brochure || !aboutImage || !aboutImageAlt || !description[0] ||
     !['commercial', 'residential', 'plotted'].includes(typeOfProject) ||
-    !['Upcoming', 'On-going', 'Completed'].includes(projectState) || !Number.isInteger(statusPercentage) ||
+    !['Upcoming', 'On-going', 'Under Construction', 'Completed'].includes(projectState) || !Number.isInteger(statusPercentage) ||
     statusPercentage < 0 || statusPercentage > 100 || !Array.isArray(projectUpdates.images) || projectUpdates.images.length !== 2 ||
     updateImages.some((image) => !image.image || !image.alt) || !string(projectUpdates.title, 160) ||
     !string(location.description, 2000) || !mapUrl ||

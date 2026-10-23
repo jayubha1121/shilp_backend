@@ -31,6 +31,16 @@ test('accepts and preserves the complete project payload', () => {
   assert.equal(project.floorPlans[0].alt, 'Floor plan drawing');
 });
 
+test('accepts Under Construction as a project state and stores it for live display', () => {
+  const draft = completeProject();
+  draft.projectState = 'Under Construction';
+  const project = parseProjectDraft(draft);
+  assert.ok(project);
+  assert.equal(project.projectState, 'Under Construction');
+  assert.equal(project.projectDetail.projectWorkStatus, 'Under Construction');
+  assert.equal(project.projectDetail.projectStatus, 'Under Construction');
+});
+
 test('rejects projects without exactly two completed update images', () => {
   const draft = completeProject();
   draft.projectUpdates.images.pop();
