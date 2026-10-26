@@ -20,6 +20,7 @@ test('lists all managed non-project banner slots', () => {
     'commercial',
     'residential',
     'plotted',
+    'blog',
   ]);
 });
 

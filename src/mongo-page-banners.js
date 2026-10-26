@@ -13,6 +13,7 @@ const bannerPages = [
   'commercial',
   'residential',
   'plotted',
+  'blog',
 ];
 
 const pageBannerSchema = new Schema({

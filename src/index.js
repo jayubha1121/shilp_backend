@@ -29,6 +29,7 @@ const {
 } = require('./mongo-job-openings');
 const { bannerPages, listPageBanners, parsePageBannerDraft, savePageBanner } = require('./mongo-page-banners');
 const { sanitizeSvg } = require('./sanitize-svg');
+const { createBlog, deleteBlog, getBlogBySlug, listBlogs, parseBlogDraft, updateBlog } = require('./mongo-blogs');
 
 const app = express();
 const port = Number(process.env.PORT || 8081);
@@ -320,6 +321,53 @@ app.delete('/api/job-openings/:id', authenticate, async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+});
+
+app.get('/api/blogs', (req, res, next) => {
+  if (req.query.all === 'true') return authenticate(req, res, next);
+  return next();
+}, async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
+    const skip = Math.max(Number(req.query.skip) || 0, 0);
+    const result = await listBlogs({ includeUnpublished: req.query.all === 'true', skip, limit });
+    return res.json(result);
+  } catch (error) { return next(error); }
+});
+app.post('/api/blogs', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseBlogDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid blog title, slug, HTML description, author, ISO date, status, images, and points.' });
+    return res.status(201).json({ data: await createBlog(draft) });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ success: false, message: 'A blog with that slug already exists.' });
+    return next(error);
+  }
+});
+app.get('/api/blogs/:slug', authenticateOptional, async (req, res, next) => {
+  try {
+    const blog = await getBlogBySlug(req.params.slug, Boolean(req.admin));
+    if (!blog) return res.status(404).json({ success: false, message: 'Blog not found.' });
+    return res.json({ data: blog });
+  } catch (error) { return next(error); }
+});
+app.put('/api/blogs/:id', authenticate, async (req, res, next) => {
+  try {
+    const draft = parseBlogDraft(req.body);
+    if (!draft) return res.status(400).json({ success: false, message: 'Enter a valid blog title, slug, HTML description, author, ISO date, status, images, and points.' });
+    const blog = await updateBlog(req.params.id, draft);
+    if (!blog) return res.status(404).json({ success: false, message: 'Blog not found.' });
+    return res.json({ data: blog });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ success: false, message: 'A blog with that slug already exists.' });
+    return next(error);
+  }
+});
+app.delete('/api/blogs/:id', authenticate, async (req, res, next) => {
+  try {
+    if (!await deleteBlog(req.params.id)) return res.status(404).json({ success: false, message: 'Blog not found.' });
+    return res.json({ success: true, message: 'Blog deleted.' });
+  } catch (error) { return next(error); }
 });
 
 app.get('/api/page-banners', async (_req, res, next) => {
